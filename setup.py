@@ -1,7 +1,7 @@
 from setuptools import find_packages
 from setuptools import setup
 
-import srvcheck
+import srvbeat
 
 setup(name='srvbeat',
 	version=srvbeat.__version__,
@@ -15,6 +15,7 @@ setup(name='srvbeat',
 	entry_points={
 		'console_scripts': [
 			'srvbeat=srvbeat.main:main',
+			'srvbeat-testclient=srvbeat.client:testClient',
 		],
 	},
     zip_safe=False,
