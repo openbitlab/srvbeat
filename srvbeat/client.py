@@ -51,6 +51,20 @@ def sendUsageBeatPeriodically(host, port, name, delay):
 	t.start()
 	return t
 
+
+def standaloneClient():
+	import sys 
+
+	if len(sys.argv) > 4:
+		print ("usage: srvbeat-client name host port")
+
+	NAME = sys.argv[1]
+	HOST = sys.argv[2]
+	PORT = int(sys.argv[3])
+
+	sendUsageBeat(HOST, PORT, NAME)
+
+
 def testClient():
 	import sys 
 
