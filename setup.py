@@ -16,7 +16,7 @@ setup(name='srvbeat',
 		'console_scripts': [
 			'srvbeat=srvbeat.main:main',
 			'srvbeat-testclient=srvbeat.client:testClient',
-			'srvbeat-client=srvbeat.client:standloneClient',
+			'srvbeat-client=srvbeat.client:standaloneClient',
 		],
 	},
     zip_safe=False,
