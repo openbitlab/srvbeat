@@ -34,13 +34,13 @@ class BeatState:
     def forget(self, name):
         """ Forget a server """
         if name not in self.data['nodes']:
-            self.tg.send(f'{name} is not a known node')
+            self.tg.send(f'❓{name} is not a known node')
             return 
 
         del self.data['nodes'][name]
         self.save()
 
-        self.tg.send(f'{name} forgotten')
+        self.tg.send(f'🔌 {name} forgotten')
 
     def feed(self, message):
         """ Feed a new message to the beatState """
@@ -48,7 +48,7 @@ class BeatState:
 
         # Discovered a new server
         if message.name not in self.data['nodes']:
-            self.tg.send(f'discovered a new server: {message.name}')
+            self.tg.send(f'🔗 discovered a new server: {message.name}')
             self.data['nodes'][message.name] = {
                 'name': message.name,
                 'lastMessage': message.data,
@@ -61,8 +61,8 @@ class BeatState:
 
             olds = self.data['nodes'][message.name]['status']
             if olds != 'online':
-                cbt = int(time.time()-self.data['nodes'][message.name]['lastBeat']) / 60.
-                self.tg.send(f'{message.name} come back online after {cbt} minutes')
+                cbt = int((time.time()-self.data['nodes'][message.name]['lastBeat']) / 60.)
+                self.tg.send(f'✅ {message.name} come back online after {cbt} minutes')
             self.data['nodes'][message.name]['status'] = 'online'
             self.data['nodes'][message.name]['lastBeat'] = time.time()
 
@@ -71,8 +71,22 @@ class BeatState:
 
     def _polling(self):
         firstPool = True 
+        i = 0
 
         while True:
+            i += 1
+
+            # Check for delayed beats
+            if i % 20 == 1:
+                for x in self.data['nodes']:
+                    n = self.data['nodes'][x]
+
+                    if (n['lastBeat'] + 300) < time.time():
+                        self.data['nodes'][x]['status'] = 'offline'
+                        self.tg.send(f'🔴 {n["name"]} is not sending a beat since {int ((time.time() - n["lastBeat"]) / 60)} minutes')
+
+
+            # Get and handle telegram updates
             up = self.tg.getUpdates()
 
             if not up['ok']:
@@ -114,7 +128,14 @@ class BeatState:
                     self.forget(xx[1])
                 
                 elif xx[0] == '/list':
-                    cc = list(map(lambda x: x.name, self.data['nodes'].values()))
+                    def cl (x):
+                        l = ('✅' if x['status'] == 'online' else '🔴')
+                        l += ' ' + x['name']
+                        l += f' ({int((time.time() - x["lastBeat"])/60)} minutes ago)'
+
+                        return l
+
+                    cc = list(map(cl, self.data['nodes'].values()))
 
                     if len(cc) == 0:
                         self.tg.send('nothing here yet')
