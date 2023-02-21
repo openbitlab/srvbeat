@@ -135,7 +135,7 @@ class BeatState:
                 xx = x.split(' ')
 
                 if xx[0] == '/help':
-                    self.tg.send('Commands:\n\t/help: shows this help\n\t/forget name: forget the node by name\n/list: returns the nodes list')
+                    self.tg.send('Commands:\n\t/help: shows this help\n\t/forget name: forget the node by name\n\t/list: returns the nodes list')
 
                 elif xx[0] == '/forget':
                     self.forget(xx[1])
