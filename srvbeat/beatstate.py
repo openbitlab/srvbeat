@@ -82,6 +82,8 @@ class BeatState:
         i = 0
 
         while True:
+            self.slock.acquire()
+
             i += 1
 
             if i % 750 == 1:
@@ -103,10 +105,9 @@ class BeatState:
             up = self.tg.getUpdates()
 
             if not up['ok']:
+                self.slock.release()
                 time.sleep(5)
                 continue 
-
-            self.slock.acquire()
 
             # Get results and filter
             r = up['result']
