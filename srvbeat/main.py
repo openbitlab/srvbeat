@@ -51,7 +51,7 @@ def main():
 	bs.startPolling()
 
 	# Bind the server
-	HOST = "127.0.0.1"
+	HOST = "0.0.0.0"
 	
 	if len(sys.argv) > 1:
 		PORT = int(sys.argv[1])
