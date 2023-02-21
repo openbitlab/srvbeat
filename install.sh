@@ -101,6 +101,7 @@ set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 if [[ -z $chat_id || -z $api_token ]]
 then
+    echo lol
     print_help
     exit 1
 fi
