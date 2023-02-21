@@ -70,6 +70,14 @@ class BeatState:
         self.slock.release()
 
     def _polling(self):
+        def cl (x):
+            l = ('✅' if x['status'] == 'online' else '🔴')
+            l += ' ' + x['name']
+            l += f' ({int((time.time() - x["lastBeat"])/60)} minutes ago)'
+
+            return l
+
+
         firstPool = True 
         i = 0
 
@@ -77,7 +85,9 @@ class BeatState:
             i += 1
 
             if i % (750 * 2) == 1:
-                self.tg.send(f'📥 I\'m still alive, don\'t worry.')
+                cc = list(map(cl, self.data['nodes'].values()))
+                ccs = '\n'.join(cc)
+                self.tg.send(f'📥 I\'m still alive, don\'t worry.\n{ccs}')
 
             # Check for delayed beats
             if i % 60 == 1:
@@ -131,13 +141,6 @@ class BeatState:
                     self.forget(xx[1])
                 
                 elif xx[0] == '/list':
-                    def cl (x):
-                        l = ('✅' if x['status'] == 'online' else '🔴')
-                        l += ' ' + x['name']
-                        l += f' ({int((time.time() - x["lastBeat"])/60)} minutes ago)'
-
-                        return l
-
                     cc = list(map(cl, self.data['nodes'].values()))
 
                     if len(cc) == 0:
