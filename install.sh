@@ -99,7 +99,7 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
-if [[ -z $chat_id || -z $api_token || -z $service ]]
+if [[ -z $chat_id || -z $api_token ]]
 then
     print_help
     exit 1
