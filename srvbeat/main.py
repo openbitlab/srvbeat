@@ -70,7 +70,11 @@ def main():
 
 		print(f"Connected by {addr}")
 
-		data = conn.recv(1024)
+		try:  
+			data = conn.recv(1024)
+		except socket.error:  
+			print ('Socket error, skipping')
+			continue
 
 		if not data:
 			conn.sendall(b'er')
