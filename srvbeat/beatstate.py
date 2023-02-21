@@ -113,7 +113,7 @@ class BeatState:
                 self.data['telegram']['lastUpdateId'] = r[-1]['update_id']
                 self.save()
 
-            r = list(map(lambda x: x['message']['text'], r))
+            r = list(map(lambda x: 'text' in x['message'] and x['message']['text'], r))
 
 
             # If I'm not the master, skip message handling
