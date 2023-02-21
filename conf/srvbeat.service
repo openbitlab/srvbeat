@@ -1,0 +1,11 @@
+[Unit]
+Description=Srvbeat
+
+[Service]
+Environment="HOME=/root"
+ExecStart=
+Restart=always
+RestartSec=120
+
+[Install]
+WantedBy=multi-user.target
