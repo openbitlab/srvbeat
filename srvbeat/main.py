@@ -2,9 +2,12 @@ import os
 import sys
 import json
 import socket
+import argparse
+import configparser
 
 import srvbeat 
 from srvbeat.message import Message, MessageParsingError
+from srvbeat.telegramnotification import TelegramNotification
 
 if sys.version_info[0] < 3:
 	print ('python2 not supported, please use python3')
@@ -15,10 +18,19 @@ def saveState(sfile, sdata):
 	f.write(json.dumps(sdata))
 	f.close()
 
-
 def main():
 	version = srvbeat.__version__
 	print (f"Starting srvbeat version {version}")
+
+	# Parse configuration
+	conf = configparser.ConfigParser()
+	conf.optionxform=str
+	conf.read(cf)
+
+	# Setup telegram
+	tg = TelegramNotification(cf)
+
+	# Load state file
 	sfile = os.environ['HOME'] + '/.srvbeat.json'
 
 	try:
@@ -28,7 +40,7 @@ def main():
 		ddata = {}
 		saveState(sfile, ddata)
 
-
+	# Bind the server
 	HOST = "127.0.0.1"
 	
 	if len(sys.argv) > 1:
@@ -42,6 +54,8 @@ def main():
 
 	print ('Srvbeat is now listening for incoming connections')
 
+
+	# Mainloop
 	while True:
 		conn, addr = s.accept()
 		conn.settimeout(2.0)
