@@ -5,26 +5,18 @@ import urllib.parse
 
 class TelegramNotification:
 	def __init__(self, conf):
-		super().__init__(conf)
-		try:
-			self.apiToken = conf['telegram']['apiToken'].strip('\"')
-			self.chatIds = conf['telegram']['chatIds'].strip('\"')
-
-		except:
-			self.apiToken = ""
-			self.chatIds = ""
+		self.apiToken = conf['telegram']['apiToken'].strip('\"')
+		self.chatId = conf['telegram']['chatId'].strip('\"')
 
 	def sendPhoto(self, photo):
-		for ci in self.chatIds:
-			os.system('curl -F photo=@"./%s" https://api.telegram.org/bot%s/sendPhoto?chat_id=%s' % (photo, self.apiToken, ci))
+		os.system('curl -F photo=@"./%s" https://api.telegram.org/bot%s/sendPhoto?chat_id=%s' % (photo, self.apiToken, self.chatId))
 
 	def send(self, st):
 		print(st.encode('utf-8'))
-		for x in self.chatIds:
-			requests.get(f'https://api.telegram.org/bot{self.apiToken}/sendMessage?text={st}&chat_id={x}').json()
+		requests.get(f'https://api.telegram.org/bot{self.apiToken}/sendMessage?text={st}&chat_id={self.chatId}').json()
 
 	def format(self, name, string):
 		return urllib.parse.quote('#' + name + ' ' + string)
 
-	def polling(self):
-		pass
+	def getUpdates(self):
+		return requests.get(f'https://api.telegram.org/bot{self.apiToken}/getUpdates').json()
