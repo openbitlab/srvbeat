@@ -70,6 +70,8 @@ class BeatState:
         self.slock.release()
 
     def _polling(self):
+        firstPool = True 
+
         while True:
             up = self.tg.getUpdates()
 
@@ -82,6 +84,13 @@ class BeatState:
             # Get results and filter
             r = up['result']
             r = list(filter(lambda x: x['update_id'] > self.data['telegram']['lastUpdateId'] and str(x['message']['chat']['id']) == self.tg.chatId, r))
+
+            if firstPool:
+                if len(r) > 0:
+                    self.data['telegram']['lastUpdateId'] = r[-1]['update_id']
+                    self.save()
+                r = list(filter (lambda x: x['message']['date'] > int(time.time()), r))
+                firstPool = False 
 
             if len(r) > 0:
                 self.data['telegram']['lastUpdateId'] = r[-1]['update_id']
