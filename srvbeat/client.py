@@ -3,12 +3,16 @@ import socket
 
 def sendBeat(host, port, name, pairs):
 	ps = []
-	for x in pairs.keys():
-		ps += '%s:%s' % (x, str(pairs[x]))
+	for x in pairs:
+		if type(pairs[x]) == list:
+			ps.append('%s:%s' % (x, ','.join(list(map(lambda x: str(x), pairs[x])))))
+		else:
+			ps.append('%s:%s' % (x, str(pairs[x])))
 
 	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 		s.connect((host, port))
-		s.sendall(b("SB|1|%s|%s|gb" % (name, '|'.join(ps))))
+		st = "SB|1|%s|%s|gb" % (name, '|'.join(ps))
+		s.sendall(bytes(st, 'ascii'))
 		data = s.recv(1024)
 		s.close()
 	return data
@@ -44,7 +48,7 @@ def sendUsageBeatPeriodically(host, port, name, delay):
 			time.sleep(delay)
 
 	t = Thread(target=dff, args=())
-	t.run()
+	t.start()
 	return t
 
 def testClient():

@@ -4,6 +4,7 @@ import json
 import socket
 import argparse
 import configparser
+import traceback
 
 import srvbeat 
 from srvbeat.beatstate import BeatState
@@ -46,6 +47,9 @@ def main():
 	sfile = os.environ['HOME'] + '/.srvbeat.json'
 	bs = BeatState(sfile, conf, tg)
 
+	# Mainloop
+	bs.startPolling()
+
 	# Bind the server
 	HOST = "127.0.0.1"
 	
@@ -58,11 +62,7 @@ def main():
 	s.bind((HOST, PORT))
 	s.listen()
 
-	print ('Srvbeat is now listening for incoming connections')
-
-
-	# Mainloop
-	bs.startPolling()
+	print ('Srvbeat is now listening for incoming connections on port %d' % PORT)
 
 	while True:
 		conn, addr = s.accept()
@@ -79,6 +79,7 @@ def main():
 		try:
 			dd = Message.parse(data)
 		except:
+			print(traceback.format_exc())
 			conn.sendall(b'pe')
 			continue
 
@@ -88,6 +89,7 @@ def main():
 		try:
 			bs.feed(dd)
 		except:
+			print(traceback.format_exc())
 			conn.sendall(b'fe')
 			continue
 			

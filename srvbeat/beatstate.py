@@ -47,17 +47,17 @@ class BeatState:
         self.slock.acquire()
 
         # Discovered a new server
-        if message.name not in self.data:
+        if message.name not in self.data['nodes']:
             self.tg.send(f'discovered a new server: {message.name}')
             self.data['nodes'][message.name] = {
                 'name': message.name,
-                'lastMessage': message,
+                'lastMessage': message.data,
                 'lastBeat': time.time(),
                 'status': 'online'
             }
 
         else:
-            self.data['nodes'][message.name]['lastMessage'] = message
+            self.data['nodes'][message.name]['lastMessage'] = message.data
 
             olds = self.data['nodes'][message.name]['status']
             if olds != 'online':
@@ -119,4 +119,4 @@ class BeatState:
 
     def startPolling(self):
         self.pthread = Thread(target=self._polling, args=[])
-        self.pthread.run()
+        self.pthread.start()

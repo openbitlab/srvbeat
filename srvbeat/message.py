@@ -24,5 +24,8 @@ class Message:
 			xl = x.split(':')
 			kps[xl[0]] = xl[1].split(',')
 
+			if len(kps[xl[0]]) == 1:
+				kps[xl[0]] = kps[xl[0]][0]
+
 		return Message(name, proto, kps)
 		
