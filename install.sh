@@ -1,5 +1,5 @@
 name=$(hostname)
-branch="main"
+branch="master"
 verbosity="-q"
 
 install() {
@@ -14,7 +14,7 @@ install() {
 print_help () {
     echo "Usage: install [options...]
  -n  --name <name> monitor name [default is the server hostname]
-     --branch <name> name of the branch to use for the installation [default is main]
+     --branch <name> name of the branch to use for the installation [default is master]
  -t  --telegram <chat_id> <token> telegram chat options (id and token) where the alerts will be sent [required]
  -v  --verbose enable verbose installation"
 }
