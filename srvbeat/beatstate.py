@@ -76,8 +76,11 @@ class BeatState:
         while True:
             i += 1
 
+            if i % (750 * 2) == 1:
+                self.tg.send(f'📥 I\'m still alive, don\'t worry.')
+
             # Check for delayed beats
-            if i % 20 == 1:
+            if i % 60 == 1:
                 for x in self.data['nodes']:
                     n = self.data['nodes'][x]
 
