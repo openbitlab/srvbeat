@@ -84,7 +84,7 @@ class BeatState:
         while True:
             i += 1
 
-            if i % (750 * 2) == 1:
+            if i % 750 == 1:
                 cc = list(map(cl, self.data['nodes'].values()))
                 ccs = '\n'.join(cc)
                 self.tg.send(f'📥 I\'m still alive, don\'t worry.\n{ccs}')
