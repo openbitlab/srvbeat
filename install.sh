@@ -29,7 +29,7 @@ install_beat () {
     pip3 $verbosity install git+https://github.com/openbitlab/srvbeat.git@$branch#egg=srvbeat --exists-action w --ignore-installed 
     wget $verbosity https://raw.githubusercontent.com/openbitlab/srvbeat/$branch/conf/srvbeat.conf -O $config_file ## TODO add args to change service name
     sed -i -e "s/^apiToken =.*/apiToken = \"$api_token\"/" $config_file
-    sed -i -e "s/^chatId =.*/chatId = [\"$chat_id\"]/" $config_file
+    sed -i -e "s/^chatId =.*/chatId = \"$chat_id\"/" $config_file
     sed -i -e "s/^name =.*/name = $name/" $config_file
 }
 
