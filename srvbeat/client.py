@@ -1,3 +1,4 @@
+from threading import Thread
 import socket 
 
 def sendBeat(host, port, name, pairs):
@@ -35,6 +36,16 @@ def sendUsageBeat(host, port, name):
 	}
 	sendBeat(host, port, name, u)
 
+
+def sendUsageBeatPeriodically(host, port, name, delay):
+	def dff():
+		while True:
+			sendUsageBeat(host, port, name)
+			time.sleep(delay)
+
+	t = Thread(target=dff, args=())
+	t.run()
+	return t
 
 def testClient():
 	import sys 

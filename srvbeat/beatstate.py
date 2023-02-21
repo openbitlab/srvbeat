@@ -21,7 +21,7 @@ class BeatState:
                 'telegram': {
                     'lastUpdateId': 0
                 },
-                'peers': {}
+                'nodes': {}
             }
             self.save()
 
@@ -33,10 +33,11 @@ class BeatState:
 
     def forget(self, name):
         """ Forget a server """
-        if name not in self.data['peers']:
+        if name not in self.data['nodes']:
+            self.tg.send(f'{name} is not a known node')
             return 
 
-        del self.data['peers'][name]
+        del self.data['nodes'][name]
         self.save()
 
         self.tg.send(f'{name} forgotten')
@@ -48,7 +49,7 @@ class BeatState:
         # Discovered a new server
         if message.name not in self.data:
             self.tg.send(f'discovered a new server: {message.name}')
-            self.data['peers'][message.name] = {
+            self.data['nodes'][message.name] = {
                 'name': message.name,
                 'lastMessage': message,
                 'lastBeat': time.time(),
@@ -56,14 +57,14 @@ class BeatState:
             }
 
         else:
-            self.data['peers'][message.name]['lastMessage'] = message
+            self.data['nodes'][message.name]['lastMessage'] = message
 
-            olds = self.data['peers'][message.name]['status']
+            olds = self.data['nodes'][message.name]['status']
             if olds != 'online':
-                cbt = int(time.time()-self.data['peers'][message.name]['lastBeat']) / 60.
+                cbt = int(time.time()-self.data['nodes'][message.name]['lastBeat']) / 60.
                 self.tg.send(f'{message.name} come back online after {cbt} minutes')
-            self.data['peers'][message.name]['status'] = 'online'
-            self.data['peers'][message.name]['lastBeat'] = time.time()
+            self.data['nodes'][message.name]['status'] = 'online'
+            self.data['nodes'][message.name]['lastBeat'] = time.time()
 
         self.save()
         self.slock.release()
@@ -77,6 +78,8 @@ class BeatState:
                 continue 
 
             self.slock.acquire()
+
+            # Get results and filter
             r = up['result']
             r = list(filter(lambda x: x['update_id'] > self.data['telegram']['lastUpdateId'] and str(x['message']['chat']['id']) == self.tg.chatId, r))
 
@@ -86,7 +89,30 @@ class BeatState:
 
             r = list(map(lambda x: x['message']['text'], r))
 
-            print(r)
+
+            # If I'm not the master, skip message handling
+            if not self.conf['general']['master']:
+                self.slock.release()
+                continue 
+
+            for x in r:
+                xx = x.split(' ')
+
+                if xx[0] == '/help':
+                    self.tg.send('Commands:\n\t/help: shows this help\n\t/forget name: forget the node by name\n/list: returns the nodes list')
+
+                elif xx[0] == '/forget':
+                    self.forget(xx[1])
+                
+                elif xx[0] == '/list':
+                    cc = list(map(lambda x: x.name, self.data['nodes'].values()))
+
+                    if len(cc) == 0:
+                        self.tg.send('nothing here yet')
+                    else:
+                        self.tg.send('\n'.join(cc))
+
+
 
             self.slock.release()
             time.sleep(5)
