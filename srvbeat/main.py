@@ -100,3 +100,5 @@ def main():
 
 		conn.sendall(b'ok')
 		sys.stdout.flush()
+
+	bs.stop()

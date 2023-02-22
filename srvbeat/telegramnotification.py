@@ -11,9 +11,12 @@ class TelegramNotification:
 	def sendPhoto(self, photo):
 		os.system('curl -F photo=@"./%s" https://api.telegram.org/bot%s/sendPhoto?chat_id=%s' % (photo, self.apiToken, self.chatId))
 
-	def send(self, st):
+	def send(self, st, notify = True):
 		print(st.encode('utf-8'))
-		requests.get(f'https://api.telegram.org/bot{self.apiToken}/sendMessage?text={st}&chat_id={self.chatId}').json()
+		args = "text={st}&chat_id={self.chatId}"
+		if not notify:
+			args += '&disable_notification=true'
+		requests.get(f'https://api.telegram.org/bot{self.apiToken}/sendMessage?{args}').json()
 
 	def format(self, name, string):
 		return urllib.parse.quote('#' + name + ' ' + string)

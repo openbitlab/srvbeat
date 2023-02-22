@@ -11,7 +11,9 @@ class BeatState:
 		self.tg = tg
 		self.sfile = sfile
 		self.pthread = None
+		self.cthread = None
 		self.slock = Lock()
+		self.running = True
 
 		# Load state file
 		try:
@@ -70,6 +72,32 @@ class BeatState:
 		self.save()
 		self.slock.release()
 
+	def _checkLoop(self):
+		i = 0
+
+		while self.running:
+			i += 1
+
+			self.slock.acquire()
+
+			if i % 60 == 1:
+				cc = list(map(cl, self.data['nodes'].values()))
+				ccs = '\n'.join(cc)
+				self.tg.send(f'📥 I\'m still alive, don\'t worry.\n{ccs}', False)
+
+			# Check for delayed beats
+			for x in self.data['nodes']:
+				n = self.data['nodes'][x]
+
+				if (n['lastBeat'] + 300) < time.time():
+					self.data['nodes'][x]['status'] = 'offline'
+					self.tg.send(f'🔴 {n["name"]} is not sending a beat since {int ((time.time() - n["lastBeat"]) / 60)} minutes')
+
+			self.slock.release()
+			sys.stdout.flush()
+			time.sleep(60)
+
+
 	def _polling(self):
 		def cl (x):
 			l = ('✅' if x['status'] == 'online' else '🔴')
@@ -80,30 +108,17 @@ class BeatState:
 
 
 		firstPool = True 
-		i = 0
 
-		while True:
+		while self.running:
 			self.slock.acquire()
-
-			i += 1
-
-			if i % 750 == 1:
-				cc = list(map(cl, self.data['nodes'].values()))
-				ccs = '\n'.join(cc)
-				self.tg.send(f'📥 I\'m still alive, don\'t worry.\n{ccs}')
-
-			# Check for delayed beats
-			if i % 60 == 1:
-				for x in self.data['nodes']:
-					n = self.data['nodes'][x]
-
-					if (n['lastBeat'] + 300) < time.time():
-						self.data['nodes'][x]['status'] = 'offline'
-						self.tg.send(f'🔴 {n["name"]} is not sending a beat since {int ((time.time() - n["lastBeat"]) / 60)} minutes')
 
 
 			# Get and handle telegram updates
-			up = self.tg.getUpdates()
+			try:
+				up = self.tg.getUpdates()
+			except:
+				time.sleep(20)
+				continue
 
 			if not up['ok']:
 				self.slock.release()
@@ -155,8 +170,17 @@ class BeatState:
 
 			self.slock.release()
 			sys.stdout.flush()
-			time.sleep(5)
+			time.sleep(10)
 
 	def startPolling(self):
 		self.pthread = Thread(target=self._polling, args=[])
 		self.pthread.start()
+
+		self.cthread = Thread(target=self._checkLoop(), args=[])
+		self.cthread.start()
+
+
+	def stop(self):
+		self.running = False
+		self.pthread.join()
+		self.cthread.join()
