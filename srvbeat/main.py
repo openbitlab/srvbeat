@@ -47,9 +47,6 @@ def main():
 	sfile = os.environ['HOME'] + '/.srvbeat.json'
 	bs = BeatState(sfile, conf, tg)
 
-	# Mainloop
-	bs.startPolling()
-
 	# Bind the server
 	HOST = ""
 	
@@ -59,10 +56,21 @@ def main():
 		PORT = 65432
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.bind((HOST, PORT))
-	s.listen()
+	connected = False
+
+	while not connected:
+		try:
+			s.bind((HOST, PORT))
+			s.listen()
+			connected = True
+		except:
+			print ("Address in use, waiting...")
+			time.sleep(10)
 
 	print ('Srvbeat is now listening for incoming connections on port %d' % PORT)
+
+	# Mainloop
+	bs.startPolling()
 
 	while True:
 		conn, addr = s.accept()
