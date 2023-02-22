@@ -73,7 +73,7 @@ class BeatState:
 		self.slock.release()
 
 
-	def _nodeLine (x):
+	def _nodeLine (self, x):
 		l = ('✅' if x['status'] == 'online' else '🔴')
 		l += ' ' + x['name']
 		l += f' ({int((time.time() - x["lastBeat"])/60)} minutes ago)'
