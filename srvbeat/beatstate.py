@@ -176,7 +176,7 @@ class BeatState:
 		self.pthread = Thread(target=self._polling, args=[])
 		self.pthread.start()
 
-		self.cthread = Thread(target=self._checkLoop(), args=[])
+		self.cthread = Thread(target=self._checkLoop, args=[])
 		self.cthread.start()
 
 
