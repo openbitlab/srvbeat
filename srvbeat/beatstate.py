@@ -100,7 +100,8 @@ class BeatState:
 				if (n['lastBeat'] + 300) < time.time():
 					self.data['nodes'][x]['status'] = 'offline'
 					self.tg.send(f'🔴 {n["name"]} is not sending a beat since {int ((time.time() - n["lastBeat"]) / 60)} minutes')
-
+					self.save()
+					
 			self.slock.release()
 			sys.stdout.flush()
 			time.sleep(60)
