@@ -81,6 +81,7 @@ class BeatState:
 		return l
 
 	def _checkLoop(self):
+		time.sleep(120)
 		i = 0
 
 		while self.running:
