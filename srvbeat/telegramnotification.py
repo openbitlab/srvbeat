@@ -13,7 +13,7 @@ class TelegramNotification:
 
 	def send(self, st, notify = True):
 		print(st.encode('utf-8'))
-		args = "text={st}&chat_id={self.chatId}"
+		args = f"text={st}&chat_id={self.chatId}"
 		if not notify:
 			args += '&disable_notification=true'
 		requests.get(f'https://api.telegram.org/bot{self.apiToken}/sendMessage?{args}').json()
