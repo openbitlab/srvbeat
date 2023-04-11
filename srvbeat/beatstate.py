@@ -112,8 +112,6 @@ class BeatState:
 		firstPool = True 
 
 		while self.running:
-			self.slock.acquire()
-
 
 			# Get and handle telegram updates
 			try:
@@ -123,10 +121,11 @@ class BeatState:
 				continue
 
 			if not up['ok']:
-				self.slock.release()
 				time.sleep(5)
 				continue 
 
+			self.slock.acquire()
+			
 			# Get results and filter
 			r = up['result']
 			r = list(filter(lambda x: x['update_id'] > self.data['telegram']['lastUpdateId'] and str(x['message']['chat']['id']) == self.tg.chatId, r))
@@ -167,7 +166,6 @@ class BeatState:
 						self.tg.send('nothing here yet')
 					else:
 						self.tg.send('\n'.join(cc))
-
 
 
 			self.slock.release()
