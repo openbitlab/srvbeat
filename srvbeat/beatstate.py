@@ -68,6 +68,7 @@ class BeatState:
 		
 		if self.muted[name] < time.time():
 			del self.muted[name]
+			print (f'{name} not muted anymore')
 			return False
 
 		return True		
