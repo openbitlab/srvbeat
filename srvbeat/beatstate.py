@@ -201,7 +201,7 @@ class BeatState:
 
 
 			# If I'm not the master, skip message handling
-			if not bool(self.conf['general']['master']):
+			if not bool(self.conf['general']['master'] == 'true'):
 				self.slock.release()
 				continue 
 
