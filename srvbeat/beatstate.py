@@ -115,7 +115,7 @@ class BeatState:
 
 	def _nodeLine (self, x):
 		l = ('✅' if x['status'] == 'online' else '🔴')
-		if self.checkMuted(x):
+		if self.checkMuted(x['name']):
 			l += '🔇'
 		l += ' ' + x['name']
 		l += f' ({int((time.time() - x["lastBeat"])/60)} minutes ago)'
@@ -145,11 +145,11 @@ class BeatState:
 					self.data['nodes'][x]['status'] = 'offline'
 
 					since = int ((time.time() - n["lastBeat"]) / 60)
-					if wasonline or not self.checkMuted(x):
+					if wasonline or not self.checkMuted(n['name']):
 						self.tg.send(f'🔴 {n["name"]} is not sending a beat since {since} minutes')
 
 					# Perform a phone call
-					if self.tw and since > self.callAfter and (x not in self.callMem):
+					if self.tw and since > self.callAfter and (n['name'] not in self.callMem):
 						try:
 							cid = self.tw.call()
 							self.tg.send(f'☎ Emergency call submitted after {since} minutes: {cid}')
