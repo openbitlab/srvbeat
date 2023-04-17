@@ -102,6 +102,8 @@ class BeatState:
 
 	def _nodeLine (self, x):
 		l = ('✅' if x['status'] == 'online' else '🔴')
+		if self.checkMuted(x):
+			l += '🔇'
 		l += ' ' + x['name']
 		l += f' ({int((time.time() - x["lastBeat"])/60)} minutes ago)'
 
