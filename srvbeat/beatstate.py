@@ -5,6 +5,12 @@ from threading import Thread, Lock
 
 from .message import Message
 
+HELP_STR = """Commands:
+\t/help: shows this help
+\t/mute name [t]: mute the node name for 1h or [tm] minutes or [th] hours
+\tforget name: forget the node by name
+\t/list: returns the nodes list"""
+
 class BeatState:
 	def __init__(self, sfile, conf, tg):
 		self.conf = conf
@@ -14,6 +20,7 @@ class BeatState:
 		self.cthread = None
 		self.slock = Lock()
 		self.running = True
+		self.muted = {} 
 
 		# Load state file
 		try:
@@ -44,6 +51,26 @@ class BeatState:
 		self.save()
 
 		self.tg.send(f'🔌 {name} forgotten')
+
+	def mute(self, name, dmin):
+		""" Mute a server """			
+		if name not in self.data['nodes']:
+			self.tg.send(f'❓{name} is not a known node')
+			return 
+				
+		self.muted[v] = time.time() + (dmin * 60)
+		self.tg.send(f'🔇 muted {v} for {dmin} minutes')
+
+	def checkMuted(self, name):
+		""" Check if a server is muted """
+		if name not in self.muted:
+			return False
+		
+		if self.muted[name] < time.time():
+			del self.muted[name]
+			return False
+
+		return True		
 
 	def feed(self, message):
 		""" Feed a new message to the beatState """
@@ -99,8 +126,11 @@ class BeatState:
 				n = self.data['nodes'][x]
 
 				if (n['lastBeat'] + 300) < time.time():
+					wasonline = self.data['nodes'][x]['status'] == 'online'
 					self.data['nodes'][x]['status'] = 'offline'
-					self.tg.send(f'🔴 {n["name"]} is not sending a beat since {int ((time.time() - n["lastBeat"]) / 60)} minutes')
+
+					if wasonline or not checkMuted(x):
+						self.tg.send(f'🔴 {n["name"]} is not sending a beat since {int ((time.time() - n["lastBeat"]) / 60)} minutes')
 					self.save()
 					
 			self.slock.release()
@@ -112,7 +142,6 @@ class BeatState:
 		firstPool = True 
 
 		while self.running:
-
 			# Get and handle telegram updates
 			try:
 				up = self.tg.getUpdates()
@@ -154,10 +183,15 @@ class BeatState:
 				xx = x.split(' ')
 
 				if xx[0] == '/help':
-					self.tg.send('Commands:\n\t/help: shows this help\n\t/forget name: forget the node by name\n\t/list: returns the nodes list')
+					self.tg.send(HELP_STR)
 
-				elif xx[0] == '/forget':
+				elif xx[0] == '/forget' and len(xx) == 2:
 					self.forget(xx[1])
+
+				elif xx[0] == '/mute' and len(xx) >= 2:
+					v = xx[1]
+					dmin = int(xx[2]) if len(xx) == 3 and xx[2].isdigit() else 60
+					self.mute(v, dmin)
 				
 				elif xx[0] == '/list':
 					cc = list(map(self._nodeLine, self.data['nodes'].values()))
@@ -166,6 +200,9 @@ class BeatState:
 						self.tg.send('nothing here yet')
 					else:
 						self.tg.send('\n'.join(cc))
+
+				else:
+					self.tg.send(f'unrecognized command: ```{str(x)}```')
 
 
 			self.slock.release()
