@@ -58,8 +58,8 @@ class BeatState:
 			self.tg.send(f'❓{name} is not a known node')
 			return 
 				
-		self.muted[v] = time.time() + (dmin * 60)
-		self.tg.send(f'🔇 muted {v} for {dmin} minutes')
+		self.muted[name] = time.time() + (dmin * 60)
+		self.tg.send(f'🔇 muted {name} for {dmin} minutes')
 
 	def checkMuted(self, name):
 		""" Check if a server is muted """
