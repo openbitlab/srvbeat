@@ -1,6 +1,7 @@
 import json
 import time
 import sys
+import traceback
 from threading import Thread, Lock
 
 from .message import Message
@@ -150,12 +151,15 @@ class BeatState:
 
 					# Perform a phone call
 					if self.tw and since > self.callAfter and (n['name'] not in self.callMem):
-						# try:
-						cid = self.tw.call()
-						self.tg.send(f'☎ Emergency call submitted after {since} minutes: {cid}')
-						self.callMem[x] = time.time()
-						#except:
-						#	self.tg.send(f'☎ Error while performing a phone call')
+						try:
+							cid = self.tw.call()
+							self.tg.send(f'☎ Emergency call submitted after {since} minutes: {cid}')
+							self.callMem[x] = time.time()
+						except:
+							self.tg.send(f'☎ Error while performing a phone call')
+							tb = traceback.format_exc()
+						finally:
+							print (tb)
 							
 					self.save()
 					
