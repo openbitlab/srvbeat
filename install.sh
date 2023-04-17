@@ -28,6 +28,7 @@ install_beat () {
     systemctl stop srvbeat.service
     rm -rf /etc/srvbeat.conf
     rm -rf /etc/systemd/system/srvbeat.service
+    pip3 $verbosity install twilio --exists-action w --ignore-installed 
     pip3 $verbosity install git+https://github.com/openbitlab/srvbeat.git@$branch#egg=srvbeat --exists-action w --ignore-installed 
 
     if [ "$keepconf" = false ] ; then
