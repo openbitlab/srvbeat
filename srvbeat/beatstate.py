@@ -157,9 +157,7 @@ class BeatState:
 							self.callMem[x] = time.time()
 						except:
 							self.tg.send(f'☎ Error while performing a phone call')
-							tb = traceback.format_exc()
-						finally:
-							print (tb)
+							print (traceback.format_exc())
 							
 					self.save()
 					
