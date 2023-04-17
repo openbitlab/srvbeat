@@ -11,6 +11,7 @@ import srvbeat
 from srvbeat.beatstate import BeatState
 from srvbeat.message import Message, MessageParsingError
 from srvbeat.telegramnotification import TelegramNotification
+from srvbeat.twiliocallnotification import TwilioCallNotification
 
 if sys.version_info[0] < 3:
 	print ('python2 not supported, please use python3')
