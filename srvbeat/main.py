@@ -101,7 +101,7 @@ def main():
 			continue
 
 		# Handle message
-		print ('received:', dd)
+		print ('Received:', dd)
 		
 		try:
 			bs.feed(dd)

@@ -41,6 +41,8 @@ class BeatState:
 			}
 			self.save()
 
+		self.tg.send(f'❤️ Srvbeat started: 🕑 beatTimeout is {self.beatTimeout} sec, ☎ calls are {"enabled" if self.tw else "disabled"}')
+
 	def save(self):
 		""" Save current state """
 		f = open(self.sfile, 'w')
