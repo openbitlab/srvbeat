@@ -129,7 +129,7 @@ class BeatState:
 					wasonline = self.data['nodes'][x]['status'] == 'online'
 					self.data['nodes'][x]['status'] = 'offline'
 
-					if wasonline or not checkMuted(x):
+					if wasonline or not self.checkMuted(x):
 						self.tg.send(f'🔴 {n["name"]} is not sending a beat since {int ((time.time() - n["lastBeat"]) / 60)} minutes')
 					self.save()
 					
