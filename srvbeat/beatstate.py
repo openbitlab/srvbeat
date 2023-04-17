@@ -17,8 +17,8 @@ class BeatState:
 		self.tg = tg
 		self.tw = tw
 
-		self.callAfter = conf['general']['callAfter']
-		self.beatTimeout = conf['general']['beatTimeout']
+		self.callAfter = int(conf['general']['callAfter'])
+		self.beatTimeout = int(conf['general']['beatTimeout'])
 
 		self.sfile = sfile
 		self.pthread = None
