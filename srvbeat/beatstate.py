@@ -7,8 +7,8 @@ from .message import Message
 
 HELP_STR = """Commands:
 \t/help: shows this help
-\t/mute name [t]: mute the node name for 1h or [tm] minutes or [th] hours
-\tforget name: forget the node by name
+\t/mute name [t]: mute the node name for t minutes (default: 60)
+\t/forget name: forget the node by name
 \t/list: returns the nodes list"""
 
 class BeatState:
