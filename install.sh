@@ -1,6 +1,7 @@
 name=$(hostname)
 branch="master"
 verbosity="-q"
+keepconf=false
 
 install() {
     echo "[*] Installing beat server..."
@@ -16,7 +17,8 @@ print_help () {
  -n  --name <name> monitor name [default is the server hostname]
      --branch <name> name of the branch to use for the installation [default is master]
  -t  --telegram <chat_id> <token> telegram chat options (id and token) where the alerts will be sent [required]
- -v  --verbose enable verbose installation"
+ -v  --verbose enable verbose installation
+ -k  --keep-conf keep the current /etc/srvbeat.conf"
 }
 
 install_beat () {
@@ -27,10 +29,13 @@ install_beat () {
     rm -rf /etc/srvbeat.conf
     rm -rf /etc/systemd/system/srvbeat.service
     pip3 $verbosity install git+https://github.com/openbitlab/srvbeat.git@$branch#egg=srvbeat --exists-action w --ignore-installed 
-    wget $verbosity https://raw.githubusercontent.com/openbitlab/srvbeat/$branch/conf/srvbeat.conf -O $config_file ## TODO add args to change service name
-    sed -i -e "s/^apiToken =.*/apiToken = \"$api_token\"/" $config_file
-    sed -i -e "s/^chatId =.*/chatId = \"$chat_id\"/" $config_file
-    sed -i -e "s/^name =.*/name = $name/" $config_file
+
+    if [ "$keepconf" = false ] ; then
+        wget $verbosity https://raw.githubusercontent.com/openbitlab/srvbeat/$branch/conf/srvbeat.conf -O $config_file ## TODO add args to change service name
+        sed -i -e "s/^apiToken =.*/apiToken = \"$api_token\"/" $config_file
+        sed -i -e "s/^chatId =.*/chatId = \"$chat_id\"/" $config_file
+        sed -i -e "s/^name =.*/name = $name/" $config_file
+    fi
 }
 
 install_service () {
@@ -59,6 +64,10 @@ case $1 in
     ;;
     -v|--verbose)
         verbosity=""
+        shift # past argument
+    ;;
+    -k|--keep-conf)
+        keepconf=true
         shift # past argument
     ;;
     --branch)

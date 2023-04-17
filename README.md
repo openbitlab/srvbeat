@@ -6,6 +6,26 @@
 curl -s https://raw.githubusercontent.com/openbitlab/srvbeat/master/install.sh | bash -s -- -t <tg_chat_id> <tg_token> -n <name> <optional_flags>
 ```
 
+Use -k to keep current configuration.
+
+
+### Configure call via twilio
+
+Edit /etc/srvbeat.conf and fill the following fields:
+
+```
+[twilio]
+accountSid =
+authToken = 
+from = 
+to = 
+```
+
+and turn callEnabled to true.
+
+Srvbeat will perform a voice call to [to] after [callAfter] minutes of downtime.
+
+
 ## Install on clients
 
 ```

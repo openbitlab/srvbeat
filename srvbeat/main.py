@@ -44,9 +44,12 @@ def main():
 	# Setup telegram
 	tg = TelegramNotification(conf)
 
+	# Setup twilio
+	tw = TwilioCallNotification(conf) if conf['general']['callEnabled'] else None
+
 	# Setup beatstate        
 	sfile = os.environ['HOME'] + '/.srvbeat.json'
-	bs = BeatState(sfile, conf, tg)
+	bs = BeatState(sfile, conf, tg, tw)
 
 	# Bind the server
 	HOST = ""
