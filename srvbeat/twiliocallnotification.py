@@ -1,9 +1,9 @@
 class TwilioCallNotification:
 	def __init__(self, conf):
-		account_sid = conf['twilio']['accountSid']
-		auth_token = conf['twilio']['authToken']
-		toNumber = conf['twilio']['to']
-		fromNumber = conf['twilio']['from']
+		self.account_sid = conf['twilio']['accountSid']
+		self.auth_token = conf['twilio']['authToken']
+		self.toNumber = conf['twilio']['to']
+		self.fromNumber = conf['twilio']['from']
 	
 	def call(self):
 		from twilio.rest import Client
