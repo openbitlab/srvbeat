@@ -11,6 +11,7 @@ import srvbeat
 from srvbeat.beatstate import BeatState
 from srvbeat.message import Message, MessageParsingError
 from srvbeat.telegramnotification import TelegramNotification
+from srvbeat.twiliocallnotification import TwilioCallNotification
 
 if sys.version_info[0] < 3:
 	print ('python2 not supported, please use python3')
@@ -44,9 +45,12 @@ def main():
 	# Setup telegram
 	tg = TelegramNotification(conf)
 
+	# Setup twilio
+	tw = (TwilioCallNotification(conf) if bool(conf['general']['callEnabled'] == 'true') else None)
+
 	# Setup beatstate        
 	sfile = os.environ['HOME'] + '/.srvbeat.json'
-	bs = BeatState(sfile, conf, tg)
+	bs = BeatState(sfile, conf, tg, tw)
 
 	# Bind the server
 	HOST = ""
@@ -97,7 +101,7 @@ def main():
 			continue
 
 		# Handle message
-		print ('received:', dd)
+		print ('Received:', dd)
 		
 		try:
 			bs.feed(dd)

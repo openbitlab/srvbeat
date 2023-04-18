@@ -1,6 +1,7 @@
 import json
 import time
 import sys
+import traceback
 from threading import Thread, Lock
 
 from .message import Message
@@ -12,15 +13,21 @@ HELP_STR = """Commands:
 \t/list: returns the nodes list"""
 
 class BeatState:
-	def __init__(self, sfile, conf, tg):
+	def __init__(self, sfile, conf, tg, tw):
 		self.conf = conf
 		self.tg = tg
+		self.tw = tw
+
+		self.callAfter = int(conf['general']['callAfter'])
+		self.beatTimeout = int(conf['general']['beatTimeout'])
+
 		self.sfile = sfile
 		self.pthread = None
 		self.cthread = None
 		self.slock = Lock()
 		self.running = True
 		self.muted = {} 
+		self.callMem = {}
 
 		# Load state file
 		try:
@@ -34,6 +41,8 @@ class BeatState:
 				'nodes': {}
 			}
 			self.save()
+
+		self.tg.send(f'❤️ Srvbeat started: 🕑 beatTimeout is {self.beatTimeout} sec, ☎ calls are {"enabled" if self.tw else "disabled"}')
 
 	def save(self):
 		""" Save current state """
@@ -94,6 +103,10 @@ class BeatState:
 			if olds != 'online':
 				cbt = int((time.time()-self.data['nodes'][message.name]['lastBeat']) / 60.)
 				self.tg.send(f'✅ {message.name} come back online after {cbt} minutes')
+
+				# Reset call memory
+				if message.name in self.callMem:
+					del self.callMem[message.name]
 			self.data['nodes'][message.name]['status'] = 'online'
 			self.data['nodes'][message.name]['lastBeat'] = time.time()
 
@@ -103,7 +116,7 @@ class BeatState:
 
 	def _nodeLine (self, x):
 		l = ('✅' if x['status'] == 'online' else '🔴')
-		if self.checkMuted(x):
+		if self.checkMuted(x['name']):
 			l += '🔇'
 		l += ' ' + x['name']
 		l += f' ({int((time.time() - x["lastBeat"])/60)} minutes ago)'
@@ -128,12 +141,24 @@ class BeatState:
 			for x in self.data['nodes']:
 				n = self.data['nodes'][x]
 
-				if (n['lastBeat'] + 300) < time.time():
+				if (n['lastBeat'] + self.beatTimeout) < time.time():
 					wasonline = self.data['nodes'][x]['status'] == 'online'
 					self.data['nodes'][x]['status'] = 'offline'
 
-					if wasonline or not self.checkMuted(x):
-						self.tg.send(f'🔴 {n["name"]} is not sending a beat since {int ((time.time() - n["lastBeat"]) / 60)} minutes')
+					since = int ((time.time() - n["lastBeat"]) / 60)
+					if wasonline or not self.checkMuted(n['name']):
+						self.tg.send(f'🔴 {n["name"]} is not sending a beat since {since} minutes')
+
+					# Perform a phone call
+					if self.tw and since > self.callAfter and (n['name'] not in self.callMem):
+						try:
+							cid = self.tw.call()
+							self.tg.send(f'☎ Emergency call submitted after {since} minutes: {cid}')
+							self.callMem[x] = time.time()
+						except:
+							self.tg.send(f'☎ Error while performing a phone call')
+							print (traceback.format_exc())
+							
 					self.save()
 					
 			self.slock.release()
@@ -178,7 +203,7 @@ class BeatState:
 
 
 			# If I'm not the master, skip message handling
-			if not self.conf['general']['master']:
+			if not bool(self.conf['general']['master'] == 'true'):
 				self.slock.release()
 				continue 
 
