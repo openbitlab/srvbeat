@@ -208,6 +208,10 @@ class BeatState:
 				continue 
 
 			for x in r:
+				for x in r:
+					if x[0] != '/':
+						continue 
+
 				xx = x.split(' ')
 
 				if xx[0] == '/help':
