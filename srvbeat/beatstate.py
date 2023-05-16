@@ -267,11 +267,11 @@ class BeatState:
 
 				elif xx[0] == '/disablecall' and len(xx) == 2:
 					v = xx[1]
-					self.disableCall(v, dmin)
+					self.disableCall(v)
 
 				elif xx[0] == '/enablecall' and len(xx) == 2:
 					v = xx[1]
-					self.enableCall(v, dmin)
+					self.enableCall(v)
 
 				elif xx[0] == '/mute' and len(xx) >= 2:
 					v = xx[1]
