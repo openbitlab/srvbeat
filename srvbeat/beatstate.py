@@ -194,7 +194,7 @@ class BeatState:
 						try:
 							cid = self.tw.call()
 							self.tg.send(f'☎ Emergency call submitted after {since} minutes: {cid}')
-							self.callMem[x] = time.time()
+							self.callMem[name] = time.time()
 						except:
 							self.tg.send(f'☎ Error while performing a phone call')
 							print (traceback.format_exc())
