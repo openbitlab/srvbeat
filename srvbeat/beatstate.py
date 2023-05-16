@@ -102,10 +102,8 @@ class BeatState:
 			self.tg.send(f'❓{name} is not a known node')
 			return False
 
-		self.slock.acquire()	
 		self.data['nodes'][name]['callEnabled'] = s
 		self.save()
-		self.slock.release()
 		return True
 
 	def enableCall(self, name):
