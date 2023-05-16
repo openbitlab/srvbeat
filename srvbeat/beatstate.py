@@ -158,6 +158,8 @@ class BeatState:
 		l = ('✅' if x['status'] == 'online' else '🔴')
 		if self.checkMuted(x['name']):
 			l += '🔇'
+		if self.isCallEnabled(x['name']):
+			l += '☎'
 		l += ' ' + x['name']
 		l += f' ({int((time.time() - x["lastBeat"])/60)} minutes ago)'
 
