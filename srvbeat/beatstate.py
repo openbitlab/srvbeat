@@ -279,7 +279,7 @@ class BeatState:
 					if len(xx) == 3:
 						if xx[2][-1].isdigit():
 							dmin = int(xx[2]) 
-						elif xx[2][0::-1].isdigit():
+						elif xx[2][0:-1].isdigit():
 							dmin = int(xx[2][0:-1])
 							u = xx[2][-1]
 							if u == 'h':
