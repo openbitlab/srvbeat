@@ -227,7 +227,7 @@ class BeatState:
 				lambda x: 
 					x['update_id'] > self.data['telegram']['lastUpdateId'] 
 					and ('message' in x)
-					and str(x['message']['chat']['id']) == self.tg.chatId), r)
+					and str(x['message']['chat']['id']) == self.tg.chatId, r))
 
 			self.slock.acquire()
 
