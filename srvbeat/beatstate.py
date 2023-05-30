@@ -223,7 +223,11 @@ class BeatState:
 			
 			# Get results and filter
 			r = up['result']
-			r = list(filter(lambda x: x['update_id'] > self.data['telegram']['lastUpdateId'] and str(('message' in x) and (x['message']['chat']['id']) == self.tg.chatId), r))
+			r = list(filter(
+				lambda x: 
+					x['update_id'] > self.data['telegram']['lastUpdateId'] 
+					and ('message' in x)
+					and str(x['message']['chat']['id']) == self.tg.chatId), r)
 
 			self.slock.acquire()
 
