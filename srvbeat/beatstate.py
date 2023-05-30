@@ -2,6 +2,7 @@ import json
 import time
 import sys
 import traceback
+from datetime import datetime
 from threading import Thread, Lock
 
 from .message import Message
@@ -9,8 +10,13 @@ from .message import Message
 HELP_STR = """Commands:
 \t/help: shows this help
 \t/mute name [t]: mute the node name for t minutes (default: 60)
+\t/unmute name: unmute the node name
 \t/forget name: forget the node by name
-\t/list: returns the nodes list"""
+\t/list: returns the nodes list
+\t/testcall: test a call to the default number
+\t/enablecall name: enable calls for the node name
+\t/disablecall name: disable calls for the node name
+"""
 
 class BeatState:
 	def __init__(self, sfile, conf, tg, tw):
@@ -61,6 +67,15 @@ class BeatState:
 
 		self.tg.send(f'🔌 {name} forgotten')
 
+	def unmute(self, name):
+		""" Unmute a server """			
+		if name not in self.data['nodes']:
+			self.tg.send(f'❓{name} is not a known node')
+			return 
+				
+		del self.muted[name]
+		self.tg.send(f'🔈 {name} unmuted')
+
 	def mute(self, name, dmin):
 		""" Mute a server """			
 		if name not in self.data['nodes']:
@@ -68,7 +83,7 @@ class BeatState:
 			return 
 				
 		self.muted[name] = time.time() + (dmin * 60)
-		self.tg.send(f'🔇 muted {name} for {dmin} minutes')
+		self.tg.send(f'🔇 muted {name} for {dmin} minutes (until {datetime.fromtimestamp(self.muted[name])})')
 
 	def checkMuted(self, name):
 		""" Check if a server is muted """
@@ -77,10 +92,32 @@ class BeatState:
 		
 		if self.muted[name] < time.time():
 			del self.muted[name]
-			print (f'{name} not muted anymore')
+			self.tg.send(f'🔈 {name} not muted anymore')
 			return False
 
 		return True		
+
+	def changeCallEnable(self, name, s):
+		if name not in self.data['nodes']:
+			self.tg.send(f'❓{name} is not a known node')
+			return False
+
+		self.data['nodes'][name]['callEnabled'] = s
+		self.save()
+		return True
+
+	def enableCall(self, name):
+		if self.changeCallEnable(name, True):
+			self.tg.send(f'☎ Call enabled for node {name}')
+
+	def disableCall(self, name):
+		if self.changeCallEnable(name, False):
+			self.tg.send(f'☎ Call disabled for node {name}')
+
+	def isCallEnabled(self, name):
+		if name not in self.data['nodes']:
+			return False
+		return self.data['nodes'][name]['callEnabled']
 
 	def feed(self, message):
 		""" Feed a new message to the beatState """
@@ -93,7 +130,8 @@ class BeatState:
 				'name': message.name,
 				'lastMessage': message.data,
 				'lastBeat': time.time(),
-				'status': 'online'
+				'status': 'online',
+				'callEnabled': True
 			}
 
 		else:
@@ -118,6 +156,8 @@ class BeatState:
 		l = ('✅' if x['status'] == 'online' else '🔴')
 		if self.checkMuted(x['name']):
 			l += '🔇'
+		if self.isCallEnabled(x['name']):
+			l += '☎'
 		l += ' ' + x['name']
 		l += f' ({int((time.time() - x["lastBeat"])/60)} minutes ago)'
 
@@ -138,23 +178,23 @@ class BeatState:
 				self.tg.send(f'📥 I\'m still alive, don\'t worry.\n{ccs}', False)
 
 			# Check for delayed beats
-			for x in self.data['nodes']:
-				n = self.data['nodes'][x]
+			for name in self.data['nodes']:
+				n = self.data['nodes'][name]
 
 				if (n['lastBeat'] + self.beatTimeout) < time.time():
-					wasonline = self.data['nodes'][x]['status'] == 'online'
-					self.data['nodes'][x]['status'] = 'offline'
+					wasonline = self.data['nodes'][name]['status'] == 'online'
+					self.data['nodes'][name]['status'] = 'offline'
 
 					since = int ((time.time() - n["lastBeat"]) / 60)
 					if wasonline or not self.checkMuted(n['name']):
-						self.tg.send(f'🔴 {n["name"]} is not sending a beat since {since} minutes')
+						self.tg.send(f'🔴 {name} is not sending a beat since {since} minutes')
 
 					# Perform a phone call
-					if self.tw and since > self.callAfter and (n['name'] not in self.callMem):
+					if self.tw and since > self.callAfter and (name not in self.callMem) and self.isCallEnabled(name):
 						try:
 							cid = self.tw.call()
 							self.tg.send(f'☎ Emergency call submitted after {since} minutes: {cid}')
-							self.callMem[x] = time.time()
+							self.callMem[name] = time.time()
 						except:
 							self.tg.send(f'☎ Error while performing a phone call')
 							print (traceback.format_exc())
@@ -180,12 +220,16 @@ class BeatState:
 			if not up['ok']:
 				time.sleep(5)
 				continue 
-
-			self.slock.acquire()
 			
 			# Get results and filter
 			r = up['result']
-			r = list(filter(lambda x: x['update_id'] > self.data['telegram']['lastUpdateId'] and str(x['message']['chat']['id']) == self.tg.chatId, r))
+			r = list(filter(
+				lambda x: 
+					x['update_id'] > self.data['telegram']['lastUpdateId'] 
+					and ('message' in x)
+					and str(x['message']['chat']['id']) == self.tg.chatId, r))
+
+			self.slock.acquire()
 
 			if firstPool:
 				if len(r) > 0:
@@ -219,11 +263,37 @@ class BeatState:
 				elif xx[0] == '/forget' and len(xx) == 2:
 					self.forget(xx[1])
 
+				elif xx[0] == '/testcall':
+					i = self.tw.call()
+					self.tg.send(f'☎ Test call submitted: {cid}')
+
+				elif xx[0] == '/disablecall' and len(xx) == 2:
+					v = xx[1]
+					self.disableCall(v)
+
+				elif xx[0] == '/enablecall' and len(xx) == 2:
+					v = xx[1]
+					self.enableCall(v)
+
 				elif xx[0] == '/mute' and len(xx) >= 2:
 					v = xx[1]
-					dmin = int(xx[2]) if len(xx) == 3 and xx[2].isdigit() else 60
-					self.mute(v, dmin)
-				
+					dmin = 60
+					if len(xx) == 3:
+						if xx[2][-1].isdigit():
+							dmin = int(xx[2]) 
+						elif xx[2][0:-1].isdigit():
+							dmin = int(xx[2][0:-1])
+							u = xx[2][-1]
+							if u == 'h':
+								dmin *= 60
+							elif u == 'd':
+								dmin *= 24 * 60
+					self.mute(v, dmin)		
+
+				elif xx[0] == '/unmute' and len(xx) == 2:
+					v = xx[1]
+					self.unmute(v)			
+
 				elif xx[0] == '/list':
 					cc = list(map(self._nodeLine, self.data['nodes'].values()))
 
