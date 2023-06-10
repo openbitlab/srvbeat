@@ -7,6 +7,7 @@ curl -s https://raw.githubusercontent.com/openbitlab/srvbeat/master/install.sh |
 ```
 
 Use -k to keep current configuration.
+Use --etcd <this_ip> to set the ip of local machine as endpoint of etcd
 
 
 ### Configure call via twilio
