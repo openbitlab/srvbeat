@@ -36,6 +36,7 @@ install_beat () {
         sed -i -e "s/^apiToken =.*/apiToken = \"$api_token\"/" $config_file
         sed -i -e "s/^chatId =.*/chatId = \"$chat_id\"/" $config_file
         sed -i -e "s/^name =.*/name = $name/" $config_file
+        sed -i -e "s/^etcdEndpoint =.*/etcdEndpoint = $etcdEndpoint/" $config_file
     fi
 }
 
@@ -78,6 +79,17 @@ case $1 in
             exit 1
         else
             branch="$2"
+        fi
+        shift # past argument
+        shift # past value
+    ;;
+    --etcd)
+        if [[ -z $2 ]]
+        then
+            print_help
+            exit 1
+        else
+            etcdEndpoint="$2"
         fi
         shift # past argument
         shift # past value

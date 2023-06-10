@@ -32,7 +32,7 @@ class BeatState:
 		self.callMem = {}
 
 		if self.conf['general']['master'] == 'true':
-			self.client_etcd = Client(os.environ['THIS_IP'], 2379)
+			self.client_etcd = Client(conf['general']['etcdEndpoint'], 2379)
 			self.etcd_id = self.client_etcd.status().header.member_id
 
 		# Load state file
