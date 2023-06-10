@@ -3,8 +3,6 @@ import time
 import sys
 import traceback
 from threading import Thread, Lock
-from etcd3 import Client
-import os
 
 from .message import Message
 
@@ -30,10 +28,6 @@ class BeatState:
 		self.running = True
 		self.muted = {} 
 		self.callMem = {}
-
-		if self.conf['general']['master'] == 'true':
-			self.client_etcd = Client(conf['general']['etcdEndpoint'], 2379)
-			self.etcd_id = self.client_etcd.status().header.member_id
 
 		# Load state file
 		try:
@@ -133,7 +127,7 @@ class BeatState:
 		time.sleep(120)
 		i = 0
 
-		while self.running and self.etcd_id == self.client_etcd.status().leader:
+		while self.running:
 			i += 1
 
 			self.slock.acquire()
