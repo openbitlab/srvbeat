@@ -20,5 +20,5 @@ setup(name='srvbeat',
 		],
 	},
     zip_safe=False,
-	install_requires=['packaging'],
+	install_requires=['packaging', 'etcd3-py'],
 )
