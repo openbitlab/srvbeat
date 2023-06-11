@@ -40,3 +40,4 @@ And put this line on /etc/crontab:
 ```
 * * * * * /usr/bin/srvbeat-client name host port >/dev/null 2>&1
 ```
+Note: If using with etcd setup, a cronjob is needed for each node in the cluster
