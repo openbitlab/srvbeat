@@ -20,4 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-__version__ = "0.0.1"
+import unittest
+
+if __name__ == "__main__":
+    unittest.main()

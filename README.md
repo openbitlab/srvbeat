@@ -1,5 +1,8 @@
 # srvbeat
 
+![CI Status](https://github.com/openbitlab/srvbeat/actions/workflows/ci.yaml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ## Install
 
 ```bash 

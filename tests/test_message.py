@@ -20,4 +20,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-__version__ = "0.0.1"
+import unittest
+
+from srvbeat.message import Message
+
+
+class TestMessage(unittest.TestCase):
+    def test_repr(self):
+        msg = Message("test", 1, {"hello": 2})
+        self.assertEqual(msg.__repr__(), "name: test, proto: 1, data: {'hello': 2}")
+
+    def test_parse(self):
+        msg = Message.parse("SB|1|test|hello:2|gb")
+        self.assertEqual(msg.name, "test")
+        self.assertEqual(msg.proto, 1)
+        self.assertEqual(msg.data, {"hello": "2"})

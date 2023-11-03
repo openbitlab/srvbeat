@@ -1,32 +1,61 @@
+# MIT License
+
+# Copyright (c) 2023 Openbitlab Team
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 class MessageParsingError(Exception):
-	pass 
+    pass
+
 
 class Message:
-	def __init__(self, name, proto, data):
-		self.name = name
-		self.proto = proto 
-		self.data = data
+    def __init__(self, name, proto, data):
+        self.name = name
+        self.proto = proto
+        self.data = data
 
-	def __repr__(self):
-		return f'name: {self.name}, proto: {self.proto}, pairs: {self.data}'
+    def __repr__(self):
+        return f"name: {self.name}, proto: {self.proto}, data: {self.data}"
 
-	def parse(rdata):
-		l = rdata.decode('ascii').split('|')
+    # TODO:
+    # def encode(self, message):
 
-		if l[0] != 'SB' or l[-1] != 'gb':
-			raise MessageParsingError('Invalid magics')
+    def parse(rdata):
+        if isinstance(rdata, str):
+            msg = rdata
+        else:
+            msg = rdata.decode("ascii")
+        msg_l = msg.split("|")
 
-		proto = int(l[1])
-		name = l[2]
-		kps = {}
+        if msg_l[0] != "SB" or msg_l[-1] != "gb":
+            raise MessageParsingError("Invalid magics")
 
-		if len(l) > 5:
-			for x in l[3:-1]:
-				xl = x.split(':')
-				kps[xl[0]] = xl[1].split(',')
+        proto = int(msg_l[1])
+        name = msg_l[2]
+        kps = {}
 
-				if len(kps[xl[0]]) == 1:
-					kps[xl[0]] = kps[xl[0]][0]
+        if len(msg_l) > 4:
+            for x in msg_l[3:-1]:
+                xl = x.split(":")
+                kps[xl[0]] = xl[1].split(",")
 
-		return Message(name, proto, kps)
-		
+                if len(kps[xl[0]]) == 1:
+                    kps[xl[0]] = kps[xl[0]][0]
+
+        return Message(name, proto, kps)
