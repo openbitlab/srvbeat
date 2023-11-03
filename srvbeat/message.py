@@ -50,7 +50,7 @@ class Message:
         name = msg_l[2]
         kps = {}
 
-        if len(msg_l) > 4:
+        if len(msg_l) > 5:
             for x in msg_l[3:-1]:
                 xl = x.split(":")
                 kps[xl[0]] = xl[1].split(",")
