@@ -298,8 +298,12 @@ class BeatState:
                     self.forget(xx[1])
 
                 elif xx[0] == "/testcall":
-                    cid = self.tw.call()
-                    self.tg.send(f"☎ Test call submitted: {cid}")
+                    try:
+                        cid = self.tw.call()
+                        self.tg.send(f"☎ Test call submitted: {cid}")
+                    except:
+                        print(traceback.format_exc())
+                        self.tg.send(f"☎ Test call failed!")
 
                 elif xx[0] == "/disablecall" and len(xx) == 2:
                     v = xx[1]
