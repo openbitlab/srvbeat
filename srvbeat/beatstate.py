@@ -38,7 +38,7 @@ HELP_STR = """Commands:
 \t/testcall: test a call to the default number
 \t/enablecall name: enable calls for the node name
 \t/disablecall name: disable calls for the node name
-\t/beattimeout sec: set beat timeout to sec
+\t/callafter min: set calling timeout to min minutes
 """
 
 
@@ -68,8 +68,9 @@ class BeatState:
             self.save()
 
         self.tg.send(
-            f"❤️ Srvbeat started: 🕑 beatTimeout is {self.beatTimeout} sec, "
-            + f'☎ calls are {"enabled" if self.tw else "disabled"}'
+            f"❤️ Srvbeat started: 🕑 beatTimeout is {self.beatTimeout} seconds, "
+            + f'☎ calls are {"enabled" if self.tw else "disabled"} '
+            + f"(call after {self.callAfter} minutes)"
         )
 
     def save(self):
@@ -89,9 +90,9 @@ class BeatState:
 
         self.tg.send(f"🔌 {name} forgotten")
 
-    def setBeatTimeout(self, timeout):
-        self.beatTimeout = timeout
-        self.tg.send(f"🕑 beatTimeout is now {self.beatTimeout} sec")
+    def setCallAfter(self, timeout):
+        self.callAfter = timeout
+        self.tg.send(f"☎ callAfter is now {self.callAfter} minutes")
 
     def unmute(self, name):
         """Unmute a server"""
@@ -206,7 +207,9 @@ class BeatState:
                 ccs = "\n".join(cc)
                 self.tg.send(
                     "📥 I'm still alive, don't worry.\n"
-                    + f"🕑 beatTimeout is now {self.beatTimeout} sec\n{ccs}",
+                    + f"🕑 beatTimeout is now {self.beatTimeout} seconds.\n"
+                    + f'☎ calls are {"enabled" if self.tw else "disabled"}'
+                    + f"(call after {self.callAfter} minutes)\n{ccs}",
                     False,
                 )
 
@@ -322,9 +325,9 @@ class BeatState:
                     v = xx[1]
                     self.enableCall(v)
 
-                elif xx[0] == "/beattimeout" and len(xx) == 2:
+                elif xx[0] == "/callafter" and len(xx) == 2:
                     v = int(xx[1])
-                    self.setBeatTimeout(v)
+                    self.setCallAfter(v)
 
                 elif xx[0] == "/mute" and len(xx) >= 2:
                     v = xx[1]
