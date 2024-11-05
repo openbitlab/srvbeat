@@ -208,7 +208,7 @@ class BeatState:
                 self.tg.send(
                     "📥 I'm still alive, don't worry.\n"
                     + f"🕑 beatTimeout is {self.beatTimeout} seconds.\n"
-                    + f'☎ calls are {"enabled" if self.tw else "disabled"}'
+                    + f'☎ calls are {"enabled" if self.tw else "disabled"} '
                     + f"(call after {self.callAfter} minutes)\n{ccs}",
                     False,
                 )
