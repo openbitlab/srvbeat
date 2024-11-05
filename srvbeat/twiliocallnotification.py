@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 class TwilioCallNotification:
     def __init__(self, conf):
         self.account_sid = conf["twilio"]["accountSid"]
