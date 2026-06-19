@@ -53,7 +53,13 @@ class TelegramNotification:
     def format(self, name, string):
         return urllib.parse.quote("#" + name + " " + string)
 
-    def getUpdates(self):
+    def getUpdates(self, offset=0, timeout=30):
+        # Long polling: the request blocks server-side until an update is
+        # available (up to `timeout` seconds) and returns immediately when one
+        # arrives, so commands are handled with minimal delay. `offset` acks
+        # already-processed updates so Telegram stops resending the backlog.
         return requests.get(
-            f"https://api.telegram.org/bot{self.apiToken}/getUpdates"
+            f"https://api.telegram.org/bot{self.apiToken}/getUpdates",
+            params={"offset": offset, "timeout": timeout},
+            timeout=timeout + 10,
         ).json()

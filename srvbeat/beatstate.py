@@ -256,7 +256,9 @@ class BeatState:
         while self.running:
             # Get and handle telegram updates
             try:
-                up = self.tg.getUpdates()
+                up = self.tg.getUpdates(
+                    offset=self.data["telegram"]["lastUpdateId"] + 1
+                )
             except:
                 time.sleep(20)
                 continue
@@ -298,70 +300,76 @@ class BeatState:
                 continue
 
             for x in r:
-                if x[0] != "/":
+                if not x or x[0] != "/":
                     continue
 
-                xx = x.split(" ")
-
-                if xx[0] == "/help":
-                    self.tg.send(HELP_STR)
-
-                elif xx[0] == "/forget" and len(xx) == 2:
-                    self.forget(xx[1])
-
-                elif xx[0] == "/testcall":
-                    try:
-                        cid = self.tw.call()
-                        self.tg.send(f"☎ Test call submitted: {cid}")
-                    except:
-                        print(traceback.format_exc())
-                        self.tg.send("☎ Test call failed!")
-
-                elif xx[0] == "/disablecall" and len(xx) == 2:
-                    v = xx[1]
-                    self.disableCall(v)
-
-                elif xx[0] == "/enablecall" and len(xx) == 2:
-                    v = xx[1]
-                    self.enableCall(v)
-
-                elif xx[0] == "/callafter" and len(xx) == 2:
-                    v = int(xx[1])
-                    self.setCallAfter(v)
-
-                elif xx[0] == "/mute" and len(xx) >= 2:
-                    v = xx[1]
-                    dmin = 60
-                    if len(xx) == 3:
-                        if xx[2][-1].isdigit():
-                            dmin = int(xx[2])
-                        elif xx[2][0:-1].isdigit():
-                            dmin = int(xx[2][0:-1])
-                            u = xx[2][-1]
-                            if u == "h":
-                                dmin *= 60
-                            elif u == "d":
-                                dmin *= 24 * 60
-                    self.mute(v, dmin)
-
-                elif xx[0] == "/unmute" and len(xx) == 2:
-                    v = xx[1]
-                    self.unmute(v)
-
-                elif xx[0] == "/list":
-                    cc = list(map(self._nodeLine, self.data["nodes"].values()))
-
-                    if len(cc) == 0:
-                        self.tg.send("nothing here yet")
-                    else:
-                        self.tg.send("\n".join(cc))
-
-                else:
-                    self.tg.send(f"unrecognized command: ```{str(x)}```")
+                try:
+                    self._handleCommand(x)
+                except:
+                    print(traceback.format_exc())
+                    self.tg.send(f"⚠ error while handling command: ```{str(x)}```")
 
             self.slock.release()
             sys.stdout.flush()
-            time.sleep(10)
+
+    def _handleCommand(self, x):  # noqa: C901
+        xx = x.split(" ")
+
+        if xx[0] == "/help":
+            self.tg.send(HELP_STR)
+
+        elif xx[0] == "/forget" and len(xx) == 2:
+            self.forget(xx[1])
+
+        elif xx[0] == "/testcall":
+            try:
+                cid = self.tw.call()
+                self.tg.send(f"☎ Test call submitted: {cid}")
+            except:
+                print(traceback.format_exc())
+                self.tg.send("☎ Test call failed!")
+
+        elif xx[0] == "/disablecall" and len(xx) == 2:
+            v = xx[1]
+            self.disableCall(v)
+
+        elif xx[0] == "/enablecall" and len(xx) == 2:
+            v = xx[1]
+            self.enableCall(v)
+
+        elif xx[0] == "/callafter" and len(xx) == 2:
+            v = int(xx[1])
+            self.setCallAfter(v)
+
+        elif xx[0] == "/mute" and len(xx) >= 2:
+            v = xx[1]
+            dmin = 60
+            if len(xx) == 3:
+                if xx[2][-1].isdigit():
+                    dmin = int(xx[2])
+                elif xx[2][0:-1].isdigit():
+                    dmin = int(xx[2][0:-1])
+                    u = xx[2][-1]
+                    if u == "h":
+                        dmin *= 60
+                    elif u == "d":
+                        dmin *= 24 * 60
+            self.mute(v, dmin)
+
+        elif xx[0] == "/unmute" and len(xx) == 2:
+            v = xx[1]
+            self.unmute(v)
+
+        elif xx[0] == "/list":
+            cc = list(map(self._nodeLine, self.data["nodes"].values()))
+
+            if len(cc) == 0:
+                self.tg.send("nothing here yet")
+            else:
+                self.tg.send("\n".join(cc))
+
+        else:
+            self.tg.send(f"unrecognized command: ```{str(x)}```")
 
     def startPolling(self):
         self.pthread = Thread(target=self._polling, args=[])
