@@ -45,7 +45,8 @@ class TelegramNotification:
             args += "&disable_notification=true"
         try:
             requests.get(
-                f"https://api.telegram.org/bot{self.apiToken}/sendMessage?{args}"
+                f"https://api.telegram.org/bot{self.apiToken}/sendMessage?{args}",
+                timeout=15,
             ).json()
         except ConnectionError as e:  # noqa: F841
             print("Conncetion error")

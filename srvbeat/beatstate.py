@@ -30,6 +30,7 @@ from threading import Lock, Thread
 from .message import Message
 
 METRIC_UNITS = {"disk": "%", "mem": "%", "load": "", "uptime": "h"}
+METRIC_EMOJI = {"disk": "💾", "mem": "🧠", "load": "⚙️", "uptime": "⏱️"}
 THRESHOLD_METRICS = ("disk", "mem", "load")
 
 HELP_STR = """Commands:
@@ -209,9 +210,12 @@ class BeatState:
         parts = []
         for k in METRIC_UNITS:
             if k in data:
-                parts.append(f"{k}:{data[k]}{METRIC_UNITS[k]}")
+                parts.append(f"{METRIC_EMOJI[k]} {data[k]}{METRIC_UNITS[k]}")
 
-        return ("  " + " ".join(parts)) if parts else ""
+        # Metrics go on their own indented line below the node, e.g.
+        #     ✅☎ n1 (0 minutes ago)
+        #        └ 💾 70%  🧠 40%  ⚙️ 1.2  ⏱️ 3h
+        return ("\n       └ " + "   ".join(parts)) if parts else ""
 
     def _nodeLine(self, x):
         msg = "✅" if x["status"] == "online" else "🔴"
@@ -314,6 +318,7 @@ class BeatState:
 
     def _polling(self):  # noqa: C901
         firstPool = True
+        startTime = int(time.time())
 
         while self.running:
             # Get and handle telegram updates
@@ -329,31 +334,37 @@ class BeatState:
                 time.sleep(5)
                 continue
 
-            # Get results and filter
-            r = up["result"]
+            self.slock.acquire()
+
+            raw = up["result"]
+
+            # Ack EVERY received update by advancing the offset to the highest
+            # update_id, even updates we ignore (other chats, edits, non-text).
+            # Otherwise Telegram keeps resending them and the next getUpdates
+            # returns instantly instead of blocking, turning the long poll into
+            # a busy loop that wastes CPU and can trip Telegram's rate limit
+            # (which then delays our replies).
+            if raw:
+                maxId = max(x["update_id"] for x in raw)
+                if maxId > self.data["telegram"]["lastUpdateId"]:
+                    self.data["telegram"]["lastUpdateId"] = maxId
+                    self.save()
+
+            # Keep only text messages coming from our configured chat
             r = list(
                 filter(
-                    lambda x: x["update_id"] > self.data["telegram"]["lastUpdateId"]
-                    and ("message" in x)
-                    and str(x["message"]["chat"]["id"]) == self.tg.chatId,
-                    r,
+                    lambda x: ("message" in x)
+                    and str(x["message"]["chat"]["id"]) == self.tg.chatId
+                    and ("text" in x["message"]),
+                    raw,
                 )
             )
 
-            self.slock.acquire()
-
+            # On the first poll, ignore commands that were queued before startup
             if firstPool:
-                if len(r) > 0:
-                    self.data["telegram"]["lastUpdateId"] = r[-1]["update_id"]
-                    self.save()
-                r = list(filter(lambda x: x["message"]["date"] > int(time.time()), r))
+                r = list(filter(lambda x: x["message"]["date"] >= startTime, r))
                 firstPool = False
 
-            if len(r) > 0:
-                self.data["telegram"]["lastUpdateId"] = r[-1]["update_id"]
-                self.save()
-
-            r = list(filter(lambda x: "text" in x["message"], r))
             r = list(map(lambda x: x["message"]["text"], r))
 
             # If I'm not the master, skip message handling
