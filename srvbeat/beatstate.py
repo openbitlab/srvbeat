@@ -43,6 +43,8 @@ HELP_STR = """Commands:
 \t/enablecall name: enable calls for the node name
 \t/disablecall name: disable calls for the node name
 \t/callafter min: set calling timeout to min minutes
+\t/ack name: acknowledge an incident, pausing call escalation until the node recovers
+\t/unack name: re-arm call escalation for the node
 """
 
 
@@ -62,6 +64,7 @@ class BeatState:
         self.running = True
         self.muted = {}
         self.callMem = {}
+        self.acked = set()
 
         # Optional metric thresholds from [general]
         self.thresholds = {}
@@ -103,9 +106,32 @@ class BeatState:
 
         del self.data["nodes"][name]
         self.metricAlerted.pop(name, None)
+        self.acked.discard(name)
         self.save()
 
         self.tg.send(f"🔌 {name} forgotten")
+
+    def ack(self, name):
+        """Acknowledge an incident: suppress call escalation for this node
+        until it recovers. Telegram alerts are unaffected (use /mute for that).
+        """
+        if name not in self.data["nodes"]:
+            self.tg.send(f"❓{name} is not a known node")
+            return
+
+        self.acked.add(name)
+        self.tg.send(
+            f"🆗 {name} acknowledged — call escalation paused until it recovers"
+        )
+
+    def unack(self, name):
+        """Re-arm call escalation for a previously acknowledged node."""
+        if name not in self.data["nodes"]:
+            self.tg.send(f"❓{name} is not a known node")
+            return
+
+        self.acked.discard(name)
+        self.tg.send(f"🔔 {name} unacknowledged — call escalation re-armed")
 
     def setCallAfter(self, timeout):
         self.callAfter = timeout
@@ -190,9 +216,10 @@ class BeatState:
                 )
                 self.tg.send(f"✅ {message.name} come back online after {cbt} minutes")
 
-                # Reset call memory
+                # Reset call memory and ack
                 if message.name in self.callMem:
                     del self.callMem[message.name]
+                self.acked.discard(message.name)
             self.data["nodes"][message.name]["status"] = "online"
             self.data["nodes"][message.name]["lastBeat"] = time.time()
 
@@ -221,6 +248,8 @@ class BeatState:
         msg = "✅" if x["status"] == "online" else "🔴"
         if self.checkMuted(x["name"]):
             msg += "🔇"
+        if x["name"] in self.acked:
+            msg += "🆗"
         if self.isCallEnabled(x["name"]):
             msg += "☎"
         msg += " " + x["name"]
@@ -293,11 +322,12 @@ class BeatState:
                             f"🔴 {name} is not sending a beat since {since} minutes"
                         )
 
-                    # Perform a phone call
+                    # Perform a phone call (unless the incident is acknowledged)
                     if (
                         self.tw
                         and since > self.callAfter
                         and (name not in self.callMem)
+                        and (name not in self.acked)
                         and self.isCallEnabled(name)
                     ):
                         try:
@@ -432,6 +462,12 @@ class BeatState:
         elif xx[0] == "/unmute" and len(xx) == 2:
             v = xx[1]
             self.unmute(v)
+
+        elif xx[0] == "/ack" and len(xx) == 2:
+            self.ack(xx[1])
+
+        elif xx[0] == "/unack" and len(xx) == 2:
+            self.unack(xx[1])
 
         elif xx[0] == "/list":
             cc = list(map(self._nodeLine, self.data["nodes"].values()))
