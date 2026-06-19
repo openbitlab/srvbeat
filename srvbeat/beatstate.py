@@ -29,6 +29,9 @@ from threading import Lock, Thread
 
 from .message import Message
 
+METRIC_UNITS = {"disk": "%", "mem": "%", "load": "", "uptime": "h"}
+THRESHOLD_METRICS = ("disk", "mem", "load")
+
 HELP_STR = """Commands:
 \t/help: shows this help
 \t/mute name [t]: mute the node name for t minutes (default: 60)
@@ -59,6 +62,18 @@ class BeatState:
         self.muted = {}
         self.callMem = {}
 
+        # Optional metric thresholds from [general]
+        self.thresholds = {}
+        for k in THRESHOLD_METRICS:
+            if k in conf["general"]:
+                try:
+                    self.thresholds[k] = float(conf["general"][k])
+                except ValueError:
+                    print(f"Ignoring invalid threshold for {k}: {conf['general'][k]}")
+        # In-memory record of which (node, metric) pairs are currently in
+        # breach, so we alert only on transitions instead of every beat.
+        self.metricAlerted = {}
+
         # Load state file
         try:
             self.data = json.loads(open(self.sfile, "r").read())
@@ -86,6 +101,7 @@ class BeatState:
             return
 
         del self.data["nodes"][name]
+        self.metricAlerted.pop(name, None)
         self.save()
 
         self.tg.send(f"🔌 {name} forgotten")
@@ -179,8 +195,23 @@ class BeatState:
             self.data["nodes"][message.name]["status"] = "online"
             self.data["nodes"][message.name]["lastBeat"] = time.time()
 
+        self._checkThresholds(message.name, message.data)
+
         self.save()
         self.slock.release()
+
+    def _metricsLine(self, x):
+        """Render the node's last reported metrics, or '' if it sent none."""
+        data = x.get("lastMessage")
+        if not isinstance(data, dict):
+            return ""
+
+        parts = []
+        for k in METRIC_UNITS:
+            if k in data:
+                parts.append(f"{k}:{data[k]}{METRIC_UNITS[k]}")
+
+        return ("  " + " ".join(parts)) if parts else ""
 
     def _nodeLine(self, x):
         msg = "✅" if x["status"] == "online" else "🔴"
@@ -190,8 +221,39 @@ class BeatState:
             msg += "☎"
         msg += " " + x["name"]
         msg += f' ({int((time.time() - x["lastBeat"]) / 60)} minutes ago)'
+        msg += self._metricsLine(x)
 
         return msg
+
+    def _checkThresholds(self, name, data):
+        """Alert when a reported metric crosses its threshold"""
+        if not self.thresholds or not isinstance(data, dict):
+            return
+
+        alerted = self.metricAlerted.setdefault(name, {})
+
+        for k, limit in self.thresholds.items():
+            if k not in data:
+                continue
+
+            try:
+                val = float(data[k])
+            except (ValueError, TypeError):
+                continue
+
+            unit = METRIC_UNITS.get(k, "")
+            if val > limit:
+                if not alerted.get(k):
+                    self.tg.send(
+                        f"⚠ {name} {k} at {data[k]}{unit} "
+                        f"(threshold {limit:g}{unit})"
+                    )
+                    alerted[k] = True
+            elif alerted.get(k):
+                self.tg.send(
+                    f"✅ {name} {k} back to {data[k]}{unit} (under {limit:g}{unit})"
+                )
+                alerted[k] = False
 
     def _checkLoop(self):
         time.sleep(120)

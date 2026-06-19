@@ -20,9 +20,51 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
+import shutil
 import socket
 import time
 from threading import Thread
+
+
+def collectMetrics():
+    """Collect basic system metrics, stdlib only"""
+    m = {}
+
+    # Root filesystem usage, percent used
+    try:
+        du = shutil.disk_usage("/")
+        m["disk"] = int(du.used * 100 / du.total)
+    except OSError:
+        pass
+
+    # 1-minute load average
+    try:
+        m["load"] = round(os.getloadavg()[0], 2)
+    except (OSError, AttributeError):
+        pass
+
+    # Memory usage, percent used (Linux /proc/meminfo)
+    try:
+        info = {}
+        with open("/proc/meminfo") as f:
+            for line in f:
+                k, _, v = line.partition(":")
+                info[k] = int(v.strip().split()[0])  # value is in kB
+        total = info["MemTotal"]
+        avail = info.get("MemAvailable", info.get("MemFree", 0))
+        m["mem"] = int((total - avail) * 100 / total)
+    except (OSError, KeyError, ValueError, IndexError):
+        pass
+
+    # Uptime in hours (Linux /proc/uptime)
+    try:
+        with open("/proc/uptime") as f:
+            m["uptime"] = int(float(f.read().split()[0]) / 3600)
+    except (OSError, ValueError, IndexError):
+        pass
+
+    return m
 
 
 def sendBeat(host, port, name, pairs):
@@ -46,7 +88,7 @@ def sendBeat(host, port, name, pairs):
 def sendBeatPeriodically(host, port, name, delay):
     def dff():
         while True:
-            sendBeat(host, port, name, {})
+            sendBeat(host, port, name, collectMetrics())
             time.sleep(delay)
 
     t = Thread(target=dff, args=())
@@ -65,7 +107,7 @@ def standaloneClient():
     HOST = sys.argv[2]
     PORT = int(sys.argv[3])
 
-    sendBeat(HOST, PORT, NAME, {})
+    sendBeat(HOST, PORT, NAME, collectMetrics())
 
 
 def testClient():
